@@ -1,0 +1,8 @@
+.DS_Store
+/bin/
+/bsp4k.ts
+/build/
+/dist/
+/work/
+*.log
+

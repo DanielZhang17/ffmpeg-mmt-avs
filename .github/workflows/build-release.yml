@@ -1,0 +1,80 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux
+            arch: amd64
+            runner: ubuntu-24.04
+          - platform: linux
+            arch: arm64
+            runner: ubuntu-24.04-arm
+          - platform: macos
+            arch: amd64
+            runner: macos-15-intel
+          - platform: macos
+            arch: arm64
+            runner: macos-15
+          - platform: windows
+            arch: amd64
+            runner: ubuntu-24.04
+          - platform: windows
+            arch: arm64
+            runner: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential cmake curl nasm pkg-config xz-utils zip
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: brew install cmake nasm pkg-config
+
+      - name: Build release archive
+        run: ./scripts/build.sh "${{ matrix.platform }}" "${{ matrix.arch }}"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-mmt-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/ffmpeg-mmt-${{ matrix.platform }}-${{ matrix.arch }}.*
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" release-assets/* --generate-notes --verify-tag
+

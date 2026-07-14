@@ -1,0 +1,52 @@
+From 50a41c46048054fd365319d37e90f6acda18633d Mon Sep 17 00:00:00 2001
+From: Anran Zhang <zhanganran2011@Live.com>
+Date: Tue, 14 Jul 2026 16:45:49 +0800
+Subject: [PATCH] avformat/mmttlv: skip unsupported interleaved packets
+
+---
+ libavformat/mmttlv.c | 21 +++++++++++++++++----
+ 1 file changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/libavformat/mmttlv.c b/libavformat/mmttlv.c
+index b5813e4..ce543a0 100644
+--- a/libavformat/mmttlv.c
++++ b/libavformat/mmttlv.c
+@@ -277,12 +277,25 @@ static int mmttlv_read_packet(AVFormatContext *s, AVPacket *pkt)
+ 
+     switch (header[1]) {
+     case IPV6_PACKET:
+-        return mmttlv_read_ipv6_packet(ctx, s, pkt, ctx->buf, size);
++        err = mmttlv_read_ipv6_packet(ctx, s, pkt, ctx->buf, size);
++        break;
+     case HEADER_COMPRESSED_IP_PACKET:
+-        return mmttlv_read_compressed_ip_packet(ctx, s, pkt, ctx->buf, size);
++        err = mmttlv_read_compressed_ip_packet(ctx, s, pkt, ctx->buf, size);
++        break;
+     default:
+-        return AVERROR_PATCHWELCOME;
++        err = AVERROR_PATCHWELCOME;
++        break;
+     }
++
++    /*
++     * Broadcast TLV captures can interleave unsupported control, IP, or MMT
++     * payloads with the selected program.  The complete TLV packet is already
++     * consumed here, so ignore only that packet instead of aborting demuxing.
++     */
++    if (err == AVERROR_PATCHWELCOME)
++        return pkt == NULL ? 0 : FFERROR_REDO;
++
++    return err;
+ }
+ 
+ static int mmttlv_read_header(AVFormatContext *s)
+@@ -381,4 +394,4 @@ const FFInputFormat ff_mmttlv_demuxer = {
+     .read_close     = mmttlv_read_close,
+     .read_timestamp = mmttlv_read_timestamp,
+ };
+-#endif
+\ No newline at end of file
++#endif
+-- 
+2.50.1 (Apple Git-155)
+
