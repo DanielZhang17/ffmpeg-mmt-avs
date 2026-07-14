@@ -5,12 +5,15 @@ ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 TARGET_OS=${1:-}
 TARGET_ARCH=${2:-}
 
-FFMPEG_REPOSITORY=https://github.com/SuperFashi/FFmpeg.git
-FFMPEG_REVISION=4b1cd60
+FFMPEG_REPOSITORY=https://github.com/FFmpeg/FFmpeg.git
+FFMPEG_REVISION=38b88335f99e76ed89ff3c93f877fdefce736c13
+FFMPEG_VERSION=8.1.2
 DAVS2_REPOSITORY=https://github.com/xatabhk/davs2-10bit.git
 DAVS2_REVISION=21d64c8f8e36
 UAVS3D_REPOSITORY=https://github.com/uavs3/uavs3d.git
 UAVS3D_REVISION=0e20d2c
+MBEDTLS_REPOSITORY=https://github.com/Mbed-TLS/mbedtls.git
+MBEDTLS_REVISION=0bebf8b8c7f07abe3571ded48a11aa907a1ffb20
 LLVM_MINGW_VERSION=20260616
 
 usage() {
@@ -78,7 +81,11 @@ clone_revision() {
 clone_revision "$FFMPEG_REPOSITORY" "$FFMPEG_REVISION" "$SOURCE_ROOT/ffmpeg"
 clone_revision "$DAVS2_REPOSITORY" "$DAVS2_REVISION" "$SOURCE_ROOT/davs2"
 clone_revision "$UAVS3D_REPOSITORY" "$UAVS3D_REVISION" "$SOURCE_ROOT/uavs3d"
+clone_revision "$MBEDTLS_REPOSITORY" "$MBEDTLS_REVISION" "$SOURCE_ROOT/mbedtls"
+git -C "$SOURCE_ROOT/mbedtls" submodule update --init --depth 1
 
+git -C "$SOURCE_ROOT/ffmpeg" apply \
+    "$ROOT_DIR/patches/0001-avformat-add-MMTP-parser-and-MMT-TLV-demuxer.patch"
 git -C "$SOURCE_ROOT/ffmpeg" apply \
     "$ROOT_DIR/patches/0001-avformat-mmttlv-skip-unsupported-interleaved-packets.patch"
 git -C "$SOURCE_ROOT/ffmpeg" apply \
@@ -173,6 +180,20 @@ ar=$(command -v "$ar")
 ranlib=$(command -v "$ranlib")
 strip=$(command -v "$strip")
 
+cmake -S "$SOURCE_ROOT/mbedtls" -B "$BUILD_ROOT/mbedtls-build" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+    -DCMAKE_C_COMPILER="$cc" \
+    -DCMAKE_AR="$ar" \
+    -DCMAKE_RANLIB="$ranlib" \
+    -DENABLE_PROGRAMS=OFF \
+    -DENABLE_TESTING=OFF \
+    -DUSE_SHARED_MBEDTLS_LIBRARY=OFF \
+    -DUSE_STATIC_MBEDTLS_LIBRARY=ON \
+    "${cmake_platform_args[@]}"
+cmake --build "$BUILD_ROOT/mbedtls-build" --parallel "$JOBS"
+cmake --install "$BUILD_ROOT/mbedtls-build"
+
 cmake -S "$SOURCE_ROOT/uavs3d" -B "$BUILD_ROOT/uavs3d-build" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="$PREFIX" \
@@ -218,18 +239,13 @@ ffmpeg_configure=(
     --disable-doc
     --disable-debug
     --disable-autodetect
-    --disable-everything
     --enable-gpl
+    --enable-version3
     --enable-ffmpeg
     --enable-ffprobe
-    --enable-demuxer=mmttlv,mpegts,cavsvideo,avs2,avs3
-    --enable-muxer=mpegts,cavsvideo,avs2,avs3
-    --enable-protocol=file
-    --enable-parser=hevc,aac,aac_latm,cavsvideo,avs2,avs3
-    --enable-decoder=hevc,aac,aac_latm,cavs,libdavs2,libuavs3d
-    --enable-bsf=hevc_mp4toannexb,aac_adtstoasc
     --enable-libdavs2
     --enable-libuavs3d
+    --enable-mbedtls
     --pkg-config=pkg-config
     --pkg-config-flags=--static
     --cc="$cc"
@@ -249,6 +265,26 @@ if ! ./configure "${ffmpeg_configure[@]}"; then
     tail -n 200 ffbuild/config.log >&2
     exit 1
 fi
+for feature in \
+    CONFIG_MMTTLV_DEMUXER \
+    CONFIG_HTTP_PROTOCOL \
+    CONFIG_HTTPS_PROTOCOL \
+    CONFIG_RTP_PROTOCOL \
+    CONFIG_RTSP_DEMUXER \
+    CONFIG_RTSP_MUXER \
+    CONFIG_RTMP_PROTOCOL \
+    CONFIG_RTMPS_PROTOCOL \
+    CONFIG_TCP_PROTOCOL \
+    CONFIG_TLS_PROTOCOL \
+    CONFIG_UDP_PROTOCOL \
+    CONFIG_CAVS_DECODER \
+    CONFIG_LIBDAVS2_DECODER \
+    CONFIG_LIBUAVS3D_DECODER; do
+    grep -qx "$feature=yes" ffbuild/config.mak || {
+        echo "required FFmpeg feature is disabled: $feature" >&2
+        exit 1
+    }
+done
 make -j"$JOBS"
 make install
 popd >/dev/null
@@ -258,7 +294,7 @@ cp "$ROOT_DIR/LICENSE" "$OUTPUT_ROOT/"
 cp -R "$ROOT_DIR/licenses" "$OUTPUT_ROOT/"
 cp -R "$ROOT_DIR/patches" "$OUTPUT_ROOT/"
 
-archive_base="ffmpeg-mmt-${TARGET_OS}-${TARGET_ARCH}"
+archive_base="ffmpeg-${FFMPEG_VERSION}-mmt-${TARGET_OS}-${TARGET_ARCH}"
 if [[ "$TARGET_OS" = windows ]]; then
     command -v zip >/dev/null || { echo "missing packaging dependency: zip" >&2; exit 1; }
     (cd "$OUTPUT_ROOT" && zip -9 -r "$DIST_ROOT/$archive_base.zip" .)

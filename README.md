@@ -1,19 +1,29 @@
-# FFmpeg MMT + AVS codecs
+# Full FFmpeg 8.1.2 + MMT + AVS codecs
 
 English | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
 
-Reproducible, minimal FFmpeg builds for extracting MPEG Media Transport
-(MMT/MMTS) captures to MPEG-TS. The build includes AVS/AVS+, AVS2, and AVS3
-decoding support.
+Reproducible, general-purpose builds based on the official FFmpeg 8.1.2
+release. They retain FFmpeg's complete built-in codec, format, protocol, and
+filter sets while adding MMT/MMTS and AVS/AVS+/AVS2/AVS3 support.
 
 ## Included support
 
+- HTTP, HTTPS, RTP, RTSP, RTMP/RTMPS, TCP, UDP, TLS/DTLS, FTP, Icecast, and
+  FFmpeg's other built-in network protocols
+- TLS through statically linked Mbed TLS 3.6.6
+- Mainstream formats including MPEG-TS, MP4, Matroska/WebM, MOV, FLV, HLS,
+  DASH, AVI, MXF, WAV, and image formats
+- FFmpeg's full built-in decoder, encoder, parser, bitstream-filter, and
+  audio/video filter sets
 - MMT/TLV input through the `mmttlv` demuxer
 - AVS1-P2 JiZhun and AVS1-P16 Guangdian (AVS+) decoding
 - AVS2 10-bit decoding through the patched `libdavs2`
 - AVS3 10-bit decoding through `libuavs3d`
-- HEVC and AAC/AAC-LATM parsing and stream copy
-- MPEG-TS input and output
+- Mainstream built-in decoders including H.264, HEVC, VVC, AV1, VP8/VP9,
+  MPEG-2/4, AAC, AC-3/E-AC-3, MP3, FLAC, Opus, and Vorbis
+
+No `--enable-nonfree` components are used. Hardware acceleration remains
+platform-dependent, as in upstream FFmpeg.
 
 Release archives are built for:
 
@@ -55,27 +65,30 @@ object files outside the repository.
 ## Automated releases
 
 GitHub Actions verifies all six targets on pushes and pull requests. Pushing a
-tag beginning with `ffmpeg-git-` and the pinned FFmpeg version builds the same
-matrix and attaches the archives to a GitHub Release:
+tag matching `ffmpeg-*-mmt` builds the same matrix and attaches the archives
+to a GitHub Release:
 
 ```sh
-git tag ffmpeg-git-2025-02-05-4b1cd60a47
-git push origin ffmpeg-git-2025-02-05-4b1cd60a47
+git tag ffmpeg-8.1.2-mmt
+git push origin ffmpeg-8.1.2-mmt
 ```
 
 The workflow can also be run manually from the Actions tab.
 
 ## Source provenance
 
-- FFmpeg MMT source: `SuperFashi/FFmpeg`, `tlvmmt` revision `4b1cd60`
+- FFmpeg: official 8.1.2 release, revision `38b88335f99e`
+- MMT/TLV support: `SuperFashi/FFmpeg`, revision `4b1cd60`
 - AVS+ port: `nilaoda/mpv-iina-avs`, revision `2c69b7317c31`
 - davs2 10-bit source: `xatabhk/davs2-10bit`, revision `21d64c8f8e36`
 - uavs3d source: `uavs3/uavs3d`, revision `0e20d2c`
+- Mbed TLS: 3.6.6, revision `0bebf8b8c7f0`
 
 The patches applied to those pinned sources are kept in `patches/`.
 
 ## License
 
-The resulting FFmpeg build is licensed under GPL version 2 or later because
-`libdavs2` is enabled. See `LICENSE`. Upstream license notices are included in
-`licenses/` and in every release archive.
+The resulting FFmpeg build is licensed under GPL version 3 or later. GPL mode
+is required by `libdavs2`, and FFmpeg's version-3 mode is enabled for Mbed TLS.
+See `LICENSE`. Upstream license notices are included in `licenses/` and in
+every release archive.
