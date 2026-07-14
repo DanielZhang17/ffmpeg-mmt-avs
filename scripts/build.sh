@@ -242,7 +242,10 @@ ffmpeg_configure=(
 )
 
 pushd "$SOURCE_ROOT/ffmpeg" >/dev/null
-./configure "${ffmpeg_configure[@]}"
+if ! ./configure "${ffmpeg_configure[@]}"; then
+    tail -n 200 ffbuild/config.log >&2
+    exit 1
+fi
 make -j"$JOBS"
 make install
 popd >/dev/null
