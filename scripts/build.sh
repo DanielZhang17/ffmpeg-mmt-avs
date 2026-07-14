@@ -188,12 +188,9 @@ cmake --build "$BUILD_ROOT/uavs3d-build" --parallel "$JOBS"
 cmake --install "$BUILD_ROOT/uavs3d-build"
 
 pushd "$SOURCE_ROOT/davs2/build/linux" >/dev/null
-davs2_configure=(--prefix="$PREFIX" --disable-cli --bit-depth=10)
+davs2_configure=(--prefix="$PREFIX" --disable-cli --bit-depth=10 --enable-pic)
 if [[ "$TARGET_OS" = windows ]]; then
     davs2_configure+=(--host="$target_triple" --cross-prefix="$target_triple-")
-    if [[ "$TARGET_ARCH" = arm64 ]]; then
-        davs2_configure+=(--disable-asm)
-    fi
 elif [[ "$TARGET_OS" = macos && "$TARGET_ARCH" = arm64 ]]; then
     davs2_configure+=(--host=aarch64-apple-darwin)
 elif [[ "$TARGET_OS" = macos ]]; then
@@ -202,6 +199,11 @@ elif [[ "$TARGET_ARCH" = arm64 ]]; then
     davs2_configure+=(--host=aarch64-linux-gnu)
 else
     davs2_configure+=(--host=x86_64-linux-gnu)
+fi
+if [[ "$TARGET_ARCH" = arm64 ]]; then
+    # The davs2 fork does not contain the AArch64 assembly sources referenced
+    # by its build files. Use its complete portable decoder implementation.
+    davs2_configure+=(--disable-asm)
 fi
 CC="$cc" AR="$ar" RANLIB="$ranlib" STRIP="$strip" ./configure "${davs2_configure[@]}"
 make -j"$JOBS"
@@ -228,6 +230,7 @@ ffmpeg_configure=(
     --enable-bsf=hevc_mp4toannexb,aac_adtstoasc
     --enable-libdavs2
     --enable-libuavs3d
+    --pkg-config=pkg-config
     --pkg-config-flags=--static
     --cc="$cc"
     --cxx="$cxx"
