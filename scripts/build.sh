@@ -120,7 +120,9 @@ if [[ "$TARGET_OS" = windows ]]; then
         ffmpeg_arch=x86_64
     else
         target_triple=aarch64-w64-mingw32
-        cmake_processor=aarch64
+        # uavs3d's AArch64 assembly uses ELF directives that are not valid in
+        # Windows COFF objects. Its portable C decoder still supports AVS3.
+        cmake_processor=generic
         ffmpeg_arch=aarch64
     fi
     export PATH="$toolchain_root/bin:$PATH"
@@ -176,6 +178,9 @@ pushd "$SOURCE_ROOT/davs2/build/linux" >/dev/null
 davs2_configure=(--prefix="$PREFIX" --disable-cli --bit-depth=10)
 if [[ "$TARGET_OS" = windows ]]; then
     davs2_configure+=(--host="$target_triple" --cross-prefix="$target_triple-")
+    if [[ "$TARGET_ARCH" = arm64 ]]; then
+        davs2_configure+=(--disable-asm)
+    fi
 elif [[ "$TARGET_OS" = macos && "$TARGET_ARCH" = arm64 ]]; then
     davs2_configure+=(--host=aarch64-apple-darwin)
 elif [[ "$TARGET_OS" = macos ]]; then
