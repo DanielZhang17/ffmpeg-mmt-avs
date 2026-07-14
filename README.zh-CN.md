@@ -39,12 +39,13 @@ llvm-mingw 交叉编译。生成的压缩包位于 `dist/`。
 
 ## 自动发布
 
-GitHub Actions 会在 push 和 pull request 时验证全部 6 个目标。推送以 `v` 开头
-的标签后，工作流会构建相同矩阵，并把压缩包附加到 GitHub Release。
+GitHub Actions 会在 push 和 pull request 时验证全部 6 个目标。推送以
+`ffmpeg-git-` 开头并包含固定 FFmpeg 版本的标签后，工作流会构建相同矩阵，
+并把压缩包附加到 GitHub Release。
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+git tag ffmpeg-git-2025-02-05-4b1cd60a47
+git push origin ffmpeg-git-2025-02-05-4b1cd60a47
 ```
 
 ## 源码来源
@@ -60,4 +61,3 @@ git push origin v1.0.0
 
 由于启用了 `libdavs2`，生成的 FFmpeg 构建采用 GPL version 2 or later。详见
 `LICENSE`。各上游依赖的许可证声明保存在 `licenses/`，并包含于每个发布包中。
-

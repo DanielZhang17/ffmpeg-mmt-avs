@@ -55,12 +55,12 @@ object files outside the repository.
 ## Automated releases
 
 GitHub Actions verifies all six targets on pushes and pull requests. Pushing a
-tag beginning with `v` builds the same matrix and attaches the archives to a
-GitHub Release:
+tag beginning with `ffmpeg-git-` and the pinned FFmpeg version builds the same
+matrix and attaches the archives to a GitHub Release:
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+git tag ffmpeg-git-2025-02-05-4b1cd60a47
+git push origin ffmpeg-git-2025-02-05-4b1cd60a47
 ```
 
 The workflow can also be run manually from the Actions tab.
@@ -79,4 +79,3 @@ The patches applied to those pinned sources are kept in `patches/`.
 The resulting FFmpeg build is licensed under GPL version 2 or later because
 `libdavs2` is enabled. See `LICENSE`. Upstream license notices are included in
 `licenses/` and in every release archive.
-

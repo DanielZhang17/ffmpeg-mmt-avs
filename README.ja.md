@@ -42,12 +42,12 @@ llvm-mingw ツールチェーンを使ってクロスコンパイルします。
 ## 自動リリース
 
 GitHub Actions は push と pull request ごとに全 6 ターゲットを検証します。
-`v` で始まるタグを push すると、同じマトリックスをビルドし、各アーカイブを
-GitHub Release に添付します。
+固定した FFmpeg バージョンを含む `ffmpeg-git-` で始まるタグを push すると、
+同じマトリックスをビルドし、各アーカイブを GitHub Release に添付します。
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+git tag ffmpeg-git-2025-02-05-4b1cd60a47
+git push origin ffmpeg-git-2025-02-05-4b1cd60a47
 ```
 
 ## ソース
@@ -64,4 +64,3 @@ git push origin v1.0.0
 `libdavs2` を有効にしているため、生成される FFmpeg ビルドは GPL version 2
 or later です。詳細は `LICENSE` を参照してください。各依存ソフトウェアの
 ライセンス表記は `licenses/` とリリースアーカイブに収録されています。
-
