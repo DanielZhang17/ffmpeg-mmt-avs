@@ -84,6 +84,11 @@ git -C "$SOURCE_ROOT/ffmpeg" apply \
 git -C "$SOURCE_ROOT/ffmpeg" apply \
     "$ROOT_DIR/patches/0001-avcodec-cavs-add-AVS-Guangdian-profile-decoding.patch"
 
+if [[ "$TARGET_OS" = windows && "$TARGET_ARCH" = arm64 ]]; then
+    git -C "$SOURCE_ROOT/uavs3d" apply \
+        "$ROOT_DIR/patches/uavs3d/0001-use-portable-c-functions-on-windows-arm64.patch"
+fi
+
 davs2_patches=(0001 0010)
 if [[ "$TARGET_ARCH" = arm64 ]]; then
     davs2_patches=(0001 0002 0003 0004 0005 0006 0007 0008 0009 0010)
