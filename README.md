@@ -1,5 +1,7 @@
 # FFmpeg MMT + AVS codecs
 
+English | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
+
 Reproducible, minimal FFmpeg builds for extracting MPEG Media Transport
 (MMT/MMTS) captures to MPEG-TS. The build includes AVS/AVS+, AVS2, and AVS3
 decoding support.
@@ -75,6 +77,6 @@ The patches applied to those pinned sources are kept in `patches/`.
 ## License
 
 The resulting FFmpeg build is licensed under GPL version 2 or later because
-`libdavs2` is enabled. Upstream license notices are included in `licenses/` and
-in every release archive.
+`libdavs2` is enabled. See `LICENSE`. Upstream license notices are included in
+`licenses/` and in every release archive.
 

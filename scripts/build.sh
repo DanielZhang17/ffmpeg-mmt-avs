@@ -100,6 +100,10 @@ for patch_number in "${davs2_patches[@]}"; do
     patch_file=$(find "$ROOT_DIR/patches/davs2-10bit" -name "${patch_number}-*.patch" -print -quit)
     git -C "$SOURCE_ROOT/davs2" apply "$patch_file"
 done
+if [[ "$TARGET_OS" = windows && "$TARGET_ARCH" = arm64 ]]; then
+    git -C "$SOURCE_ROOT/davs2" apply \
+        "$ROOT_DIR/patches/davs2-10bit/0012-use-standard-setjmp-on-windows-arm64.patch"
+fi
 
 cc=cc
 cxx=c++
@@ -109,6 +113,7 @@ strip=strip
 target_triple=
 cmake_platform_args=(-DCMAKE_POLICY_VERSION_MINIMUM=3.5)
 ffmpeg_platform_args=()
+extra_libs=
 
 if [[ "$TARGET_OS" = windows ]]; then
     for tool in curl tar; do
@@ -147,16 +152,19 @@ if [[ "$TARGET_OS" = windows ]]; then
         --arch="$ffmpeg_arch"
         --cross-prefix="$target_triple-"
     )
+    extra_libs=-lc++
 elif [[ "$TARGET_OS" = macos ]]; then
     cc=clang
     cxx=clang++
     ffmpeg_arch=$([[ "$TARGET_ARCH" = amd64 ]] && echo x86_64 || echo arm64)
     ffmpeg_platform_args=(--arch="$ffmpeg_arch")
+    extra_libs=-lc++
 else
     cc=gcc
     cxx=g++
     ffmpeg_arch=$([[ "$TARGET_ARCH" = amd64 ]] && echo x86_64 || echo aarch64)
     ffmpeg_platform_args=(--arch="$ffmpeg_arch")
+    extra_libs=-lstdc++
 fi
 
 cc=$(command -v "$cc")
@@ -229,6 +237,7 @@ ffmpeg_configure=(
     --strip="$strip"
     --extra-cflags=-I$PREFIX/include
     --extra-ldflags=-L$PREFIX/lib
+    --extra-libs="$extra_libs"
     "${ffmpeg_platform_args[@]}"
 )
 
@@ -238,7 +247,8 @@ make -j"$JOBS"
 make install
 popd >/dev/null
 
-cp "$ROOT_DIR/README.md" "$OUTPUT_ROOT/"
+cp "$ROOT_DIR/README.md" "$ROOT_DIR/README.ja.md" "$ROOT_DIR/README.zh-CN.md" "$OUTPUT_ROOT/"
+cp "$ROOT_DIR/LICENSE" "$OUTPUT_ROOT/"
 cp -R "$ROOT_DIR/licenses" "$OUTPUT_ROOT/"
 cp -R "$ROOT_DIR/patches" "$OUTPUT_ROOT/"
 
