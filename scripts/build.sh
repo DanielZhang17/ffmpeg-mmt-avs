@@ -159,7 +159,7 @@ if [[ "$TARGET_OS" = windows ]]; then
         --arch="$ffmpeg_arch"
         --cross-prefix="$target_triple-"
     )
-    extra_libs=-lc++
+    extra_libs="-lc++ -lws2_32 -lbcrypt"
 elif [[ "$TARGET_OS" = macos ]]; then
     cc=clang
     cxx=clang++
