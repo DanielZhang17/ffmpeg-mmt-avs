@@ -9,7 +9,7 @@ MMT/MMTS と AVS/AVS+/AVS2/AVS3 に対応します。
 ## 対応機能
 
 - HTTP/HTTPS、RTP/RTSP、RTMP/RTMPS、TCP、UDP、TLS/DTLS、FTP、Icecast
-- 静的リンクした Mbed TLS 3.6.6 による TLS
+- 静的リンクした OpenSSL 3.5.7 LTS による TLS 1.3
 - MPEG-TS、MP4、Matroska/WebM、MOV、FLV、HLS、DASH、AVI、MXF、WAV
 - FFmpeg 内蔵の全デコーダー、エンコーダー、パーサー、ビットストリーム
   フィルター、音声・映像フィルター
@@ -19,6 +19,12 @@ MMT/MMTS と AVS/AVS+/AVS2/AVS3 に対応します。
 - `libuavs3d` による AVS3 10-bit デコード
 - H.264、HEVC、VVC、AV1、VP8/VP9、MPEG-2/4、AAC、AC-3/E-AC-3、MP3、
   FLAC、Opus、Vorbis などの主要内蔵デコーダー
+- x264/x265 による H.264/HEVC エンコード
+- libaom、dav1d、SVT-AV1 による AV1 エンコード・デコード
+- libvpx による VP8/VP9 エンコード・デコード
+- MP3、Opus、Vorbis、Speex、Theora、WebP、JPEG 2000、JPEG XL
+- FreeType、Fontconfig、FriBidi、HarfBuzz による ASS/SSA 字幕描画
+- SRT、SFTP、libopenmpt、SoX リサンプリング、Snappy、XML、BZip2、LZMA、Zlib
 
 `--enable-nonfree` コンポーネントは使用していません。ハードウェアアクセラレーション
 は upstream FFmpeg と同様にプラットフォーム依存です。
@@ -54,8 +60,8 @@ GitHub Actions は push と pull request ごとに全 6 ターゲットを検証
 各アーカイブを GitHub Release に添付します。
 
 ```sh
-git tag ffmpeg-8.1.2-mmt
-git push origin ffmpeg-8.1.2-mmt
+git tag ffmpeg-8.1.2-full-mmt
+git push origin ffmpeg-8.1.2-full-mmt
 ```
 
 ## ソース
@@ -65,13 +71,14 @@ git push origin ffmpeg-8.1.2-mmt
 - AVS+ 移植: `nilaoda/mpv-iina-avs`、リビジョン `2c69b7317c31`
 - davs2 10-bit: `xatabhk/davs2-10bit`、リビジョン `21d64c8f8e36`
 - uavs3d: `uavs3/uavs3d`、リビジョン `0e20d2c`
-- Mbed TLS: 3.6.6、リビジョン `0bebf8b8c7f0`
+- OpenSSL: 3.5.7 LTS、リビジョン `6ca677c395a4`
+- 依存関係レシピ: vcpkg リビジョン `8e8dfb4ba483`
 
 適用するパッチは `patches/` に収録されています。
 
 ## ライセンス
 
-生成される FFmpeg ビルドは GPL version 3 or later です。`libdavs2` により
-GPL モードが必要となり、Mbed TLS のために FFmpeg の version-3 モードを有効に
-しています。詳細は `LICENSE` を参照してください。各依存ソフトウェアの
-ライセンス表記は `licenses/` とリリースアーカイブに収録されています。
+生成される FFmpeg ビルドは GPL version 3 or later です。収録する GPL Codec
+ライブラリのため GPL モードを使用し、version-3 モードも明示的に有効化しています。
+各リリースには静的リンクされた全依存関係のライセンス通知が
+`licenses/vcpkg/` に収録されています。詳細は `LICENSE` を参照してください。

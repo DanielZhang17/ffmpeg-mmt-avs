@@ -12,8 +12,9 @@ DAVS2_REPOSITORY=https://github.com/xatabhk/davs2-10bit.git
 DAVS2_REVISION=21d64c8f8e36
 UAVS3D_REPOSITORY=https://github.com/uavs3/uavs3d.git
 UAVS3D_REVISION=0e20d2c
-MBEDTLS_REPOSITORY=https://github.com/Mbed-TLS/mbedtls.git
-MBEDTLS_REVISION=0bebf8b8c7f07abe3571ded48a11aa907a1ffb20
+VCPKG_REPOSITORY=https://github.com/microsoft/vcpkg.git
+VCPKG_REVISION=8e8dfb4ba483886936ded5ca201b500b8d8b0096
+OPENSSL_VERSION=3.5.7
 LLVM_MINGW_VERSION=20260616
 
 usage() {
@@ -81,8 +82,7 @@ clone_revision() {
 clone_revision "$FFMPEG_REPOSITORY" "$FFMPEG_REVISION" "$SOURCE_ROOT/ffmpeg"
 clone_revision "$DAVS2_REPOSITORY" "$DAVS2_REVISION" "$SOURCE_ROOT/davs2"
 clone_revision "$UAVS3D_REPOSITORY" "$UAVS3D_REVISION" "$SOURCE_ROOT/uavs3d"
-clone_revision "$MBEDTLS_REPOSITORY" "$MBEDTLS_REVISION" "$SOURCE_ROOT/mbedtls"
-git -C "$SOURCE_ROOT/mbedtls" submodule update --init --depth 1
+clone_revision "$VCPKG_REPOSITORY" "$VCPKG_REVISION" "$SOURCE_ROOT/vcpkg"
 
 git -C "$SOURCE_ROOT/ffmpeg" apply \
     "$ROOT_DIR/patches/0001-avformat-add-MMTP-parser-and-MMT-TLV-demuxer.patch"
@@ -121,6 +121,7 @@ target_triple=
 cmake_platform_args=(-DCMAKE_POLICY_VERSION_MINIMUM=3.5)
 ffmpeg_platform_args=()
 extra_libs=
+vcpkg_triplet=
 
 if [[ "$TARGET_OS" = windows ]]; then
     for tool in curl tar; do
@@ -160,18 +161,24 @@ if [[ "$TARGET_OS" = windows ]]; then
         --cross-prefix="$target_triple-"
     )
     extra_libs="-lc++ -lws2_32 -lbcrypt"
+    vcpkg_triplet=$([[ "$TARGET_ARCH" = amd64 ]] && echo x64-mingw-static || echo arm64-mingw-static)
 elif [[ "$TARGET_OS" = macos ]]; then
     cc=clang
     cxx=clang++
     ffmpeg_arch=$([[ "$TARGET_ARCH" = amd64 ]] && echo x86_64 || echo arm64)
     ffmpeg_platform_args=(--arch="$ffmpeg_arch")
     extra_libs=-lc++
+    vcpkg_triplet=$([[ "$TARGET_ARCH" = amd64 ]] && echo x64-osx || echo arm64-osx)
+    export PATH="$(brew --prefix libtool)/libexec/gnubin:$PATH"
+    macos_sdk=$(xcrun --sdk macosx --show-sdk-path)
+    export CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-isystem $macos_sdk/usr/include/c++/v1"
 else
     cc=gcc
     cxx=g++
     ffmpeg_arch=$([[ "$TARGET_ARCH" = amd64 ]] && echo x86_64 || echo aarch64)
     ffmpeg_platform_args=(--arch="$ffmpeg_arch")
     extra_libs=-lstdc++
+    vcpkg_triplet=$([[ "$TARGET_ARCH" = amd64 ]] && echo x64-linux || echo arm64-linux)
 fi
 
 cc=$(command -v "$cc")
@@ -180,19 +187,19 @@ ar=$(command -v "$ar")
 ranlib=$(command -v "$ranlib")
 strip=$(command -v "$strip")
 
-cmake -S "$SOURCE_ROOT/mbedtls" -B "$BUILD_ROOT/mbedtls-build" \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX="$PREFIX" \
-    -DCMAKE_C_COMPILER="$cc" \
-    -DCMAKE_AR="$ar" \
-    -DCMAKE_RANLIB="$ranlib" \
-    -DENABLE_PROGRAMS=OFF \
-    -DENABLE_TESTING=OFF \
-    -DUSE_SHARED_MBEDTLS_LIBRARY=OFF \
-    -DUSE_STATIC_MBEDTLS_LIBRARY=ON \
-    "${cmake_platform_args[@]}"
-cmake --build "$BUILD_ROOT/mbedtls-build" --parallel "$JOBS"
-cmake --install "$BUILD_ROOT/mbedtls-build"
+vcpkg_overlay="$BUILD_ROOT/vcpkg-overlay"
+mkdir -p "$vcpkg_overlay"
+cp -R "$SOURCE_ROOT/vcpkg/ports/openssl" "$vcpkg_overlay/"
+patch --directory="$vcpkg_overlay" --strip=1 \
+    --input="$ROOT_DIR/patches/vcpkg/0001-pin-openssl-3.5.7.patch"
+"$SOURCE_ROOT/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+"$SOURCE_ROOT/vcpkg/vcpkg" install \
+    --triplet "$vcpkg_triplet" \
+    --x-manifest-root="$ROOT_DIR" \
+    --x-install-root="$BUILD_ROOT/vcpkg-installed" \
+    --overlay-ports="$vcpkg_overlay" \
+    --clean-after-build
+VCPKG_PREFIX="$BUILD_ROOT/vcpkg-installed/$vcpkg_triplet"
 
 cmake -S "$SOURCE_ROOT/uavs3d" -B "$BUILD_ROOT/uavs3d-build" \
     -DCMAKE_BUILD_TYPE=Release \
@@ -231,21 +238,58 @@ make -j"$JOBS"
 make install
 popd >/dev/null
 
-export PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig"
+export PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$VCPKG_PREFIX/lib/pkgconfig:$VCPKG_PREFIX/share/pkgconfig"
 export PKG_CONFIG_PATH=
+
+openssl_version=$(pkg-config --modversion openssl)
+if [[ "$openssl_version" != "$OPENSSL_VERSION" ]]; then
+    echo "expected OpenSSL $OPENSSL_VERSION, found $openssl_version" >&2
+    exit 1
+fi
 
 ffmpeg_configure=(
     --prefix="$OUTPUT_ROOT"
     --disable-doc
     --disable-debug
     --disable-autodetect
+    --disable-shared
+    --enable-static
     --enable-gpl
     --enable-version3
     --enable-ffmpeg
     --enable-ffprobe
+    --enable-bzlib
+    --enable-iconv
+    --enable-libaom
+    --enable-libass
     --enable-libdavs2
+    --enable-libdav1d
+    --enable-libfontconfig
+    --enable-libfreetype
+    --enable-libfribidi
+    --enable-libharfbuzz
+    --enable-libjxl
+    --enable-libmp3lame
+    --enable-libopenjpeg
+    --enable-libopenmpt
+    --enable-libopus
+    --enable-libsnappy
+    --enable-libsoxr
+    --enable-libspeex
+    --enable-libsrt
+    --enable-libssh
+    --enable-libsvtav1
+    --enable-libtheora
     --enable-libuavs3d
-    --enable-mbedtls
+    --enable-libvorbis
+    --enable-libvpx
+    --enable-libwebp
+    --enable-libx264
+    --enable-libx265
+    --enable-libxml2
+    --enable-lzma
+    --enable-openssl
+    --enable-zlib
     --pkg-config=pkg-config
     --pkg-config-flags=--static
     --cc="$cc"
@@ -254,8 +298,8 @@ ffmpeg_configure=(
     --ar="$ar"
     --ranlib="$ranlib"
     --strip="$strip"
-    --extra-cflags=-I$PREFIX/include
-    --extra-ldflags=-L$PREFIX/lib
+    --extra-cflags="-I$PREFIX/include -I$VCPKG_PREFIX/include"
+    --extra-ldflags="-L$PREFIX/lib -L$VCPKG_PREFIX/lib"
     --extra-libs="$extra_libs"
     "${ffmpeg_platform_args[@]}"
 )
@@ -277,9 +321,32 @@ for feature in \
     CONFIG_TCP_PROTOCOL \
     CONFIG_TLS_PROTOCOL \
     CONFIG_UDP_PROTOCOL \
+    CONFIG_LIBSRT_PROTOCOL \
+    CONFIG_LIBSSH_PROTOCOL \
     CONFIG_CAVS_DECODER \
+    CONFIG_LIBAOM_AV1_DECODER \
+    CONFIG_LIBAOM_AV1_ENCODER \
+    CONFIG_LIBDAV1D_DECODER \
     CONFIG_LIBDAVS2_DECODER \
-    CONFIG_LIBUAVS3D_DECODER; do
+    CONFIG_LIBJXL_DECODER \
+    CONFIG_LIBJXL_ENCODER \
+    CONFIG_LIBMP3LAME_ENCODER \
+    CONFIG_LIBOPENJPEG_ENCODER \
+    CONFIG_LIBOPUS_DECODER \
+    CONFIG_LIBOPUS_ENCODER \
+    CONFIG_LIBSPEEX_DECODER \
+    CONFIG_LIBSPEEX_ENCODER \
+    CONFIG_LIBSVTAV1_ENCODER \
+    CONFIG_LIBUAVS3D_DECODER \
+    CONFIG_LIBVORBIS_DECODER \
+    CONFIG_LIBVORBIS_ENCODER \
+    CONFIG_LIBVPX_VP8_DECODER \
+    CONFIG_LIBVPX_VP8_ENCODER \
+    CONFIG_LIBVPX_VP9_DECODER \
+    CONFIG_LIBVPX_VP9_ENCODER \
+    CONFIG_LIBWEBP_ENCODER \
+    CONFIG_LIBX264_ENCODER \
+    CONFIG_LIBX265_ENCODER; do
     grep -qx "$feature=yes" ffbuild/config.mak || {
         echo "required FFmpeg feature is disabled: $feature" >&2
         exit 1
@@ -293,6 +360,11 @@ cp "$ROOT_DIR/README.md" "$ROOT_DIR/README.ja.md" "$ROOT_DIR/README.zh-CN.md" "$
 cp "$ROOT_DIR/LICENSE" "$OUTPUT_ROOT/"
 cp -R "$ROOT_DIR/licenses" "$OUTPUT_ROOT/"
 cp -R "$ROOT_DIR/patches" "$OUTPUT_ROOT/"
+mkdir -p "$OUTPUT_ROOT/licenses/vcpkg"
+for copyright_file in "$VCPKG_PREFIX"/share/*/copyright; do
+    package_name=$(basename "$(dirname "$copyright_file")")
+    cp "$copyright_file" "$OUTPUT_ROOT/licenses/vcpkg/$package_name.txt"
+done
 
 archive_base="ffmpeg-${FFMPEG_VERSION}-mmt-${TARGET_OS}-${TARGET_ARCH}"
 if [[ "$TARGET_OS" = windows ]]; then

@@ -4,13 +4,14 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
 
 Reproducible, general-purpose builds based on the official FFmpeg 8.1.2
 release. They retain FFmpeg's complete built-in codec, format, protocol, and
-filter sets while adding MMT/MMTS and AVS/AVS+/AVS2/AVS3 support.
+filter sets, add broad statically linked portable libraries, and add MMT/MMTS
+plus AVS/AVS+/AVS2/AVS3 support.
 
 ## Included support
 
 - HTTP, HTTPS, RTP, RTSP, RTMP/RTMPS, TCP, UDP, TLS/DTLS, FTP, Icecast, and
   FFmpeg's other built-in network protocols
-- TLS through statically linked Mbed TLS 3.6.6
+- TLS 1.3 through statically linked OpenSSL 3.5.7 LTS
 - Mainstream formats including MPEG-TS, MP4, Matroska/WebM, MOV, FLV, HLS,
   DASH, AVI, MXF, WAV, and image formats
 - FFmpeg's full built-in decoder, encoder, parser, bitstream-filter, and
@@ -21,6 +22,12 @@ filter sets while adding MMT/MMTS and AVS/AVS+/AVS2/AVS3 support.
 - AVS3 10-bit decoding through `libuavs3d`
 - Mainstream built-in decoders including H.264, HEVC, VVC, AV1, VP8/VP9,
   MPEG-2/4, AAC, AC-3/E-AC-3, MP3, FLAC, Opus, and Vorbis
+- H.264/HEVC encoding through x264/x265
+- AV1 encoding and decoding through libaom, dav1d, and SVT-AV1
+- VP8/VP9 encoding and decoding through libvpx
+- MP3, Opus, Vorbis, Speex, Theora, WebP, JPEG 2000, and JPEG XL external codecs
+- ASS/SSA rendering with FreeType, Fontconfig, FriBidi, and HarfBuzz
+- SRT, SFTP, libopenmpt, SoX resampling, Snappy, XML, BZip2, LZMA, and Zlib
 
 No `--enable-nonfree` components are used. Hardware acceleration remains
 platform-dependent, as in upstream FFmpeg.
@@ -55,9 +62,10 @@ The build script accepts a target platform and architecture:
 ```
 
 macOS and Linux builds are native. Windows builds are cross-compiled on an
-amd64 Linux host using a pinned llvm-mingw toolchain. Build dependencies are
-`git`, `cmake`, `make`, `pkg-config`, and standard C/C++ build tools. `curl`
-and `xz` are also needed for Windows targets.
+amd64 Linux host using a pinned llvm-mingw toolchain. Codec dependencies are
+built from pinned source through vcpkg. The host needs standard C/C++ tools,
+Git, CMake, Make, pkg-config, Autoconf, Automake, Libtool, Meson, Ninja,
+NASM/Yasm, Perl, Python, curl, patch, and archive tools.
 
 Output is written to `dist/`. Set `BUILD_ROOT` to keep intermediate source and
 object files outside the repository.
@@ -69,8 +77,8 @@ tag matching `ffmpeg-*-mmt` builds the same matrix and attaches the archives
 to a GitHub Release:
 
 ```sh
-git tag ffmpeg-8.1.2-mmt
-git push origin ffmpeg-8.1.2-mmt
+git tag ffmpeg-8.1.2-full-mmt
+git push origin ffmpeg-8.1.2-full-mmt
 ```
 
 The workflow can also be run manually from the Actions tab.
@@ -82,13 +90,14 @@ The workflow can also be run manually from the Actions tab.
 - AVS+ port: `nilaoda/mpv-iina-avs`, revision `2c69b7317c31`
 - davs2 10-bit source: `xatabhk/davs2-10bit`, revision `21d64c8f8e36`
 - uavs3d source: `uavs3/uavs3d`, revision `0e20d2c`
-- Mbed TLS: 3.6.6, revision `0bebf8b8c7f0`
+- OpenSSL: 3.5.7 LTS, revision `6ca677c395a4`
+- Portable dependency recipes: vcpkg revision `8e8dfb4ba483`
 
 The patches applied to those pinned sources are kept in `patches/`.
 
 ## License
 
 The resulting FFmpeg build is licensed under GPL version 3 or later. GPL mode
-is required by `libdavs2`, and FFmpeg's version-3 mode is enabled for Mbed TLS.
-See `LICENSE`. Upstream license notices are included in `licenses/` and in
-every release archive.
+is required by the included GPL codec libraries, and FFmpeg's version-3 mode
+is deliberately enabled. See `LICENSE`. Every archive includes the upstream
+notice for each statically linked dependency under `licenses/vcpkg/`.

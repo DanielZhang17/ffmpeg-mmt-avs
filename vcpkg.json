@@ -1,0 +1,41 @@
+{
+  "name": "ffmpeg-mmt-avs-dependencies",
+  "version-string": "8.1.2",
+  "builtin-baseline": "8e8dfb4ba483886936ded5ca201b500b8d8b0096",
+  "dependencies": [
+    "aom",
+    "bzip2",
+    "dav1d",
+    "fontconfig",
+    "freetype",
+    "fribidi",
+    "harfbuzz",
+    "libass",
+    "libiconv",
+    "libjxl",
+    "libopenmpt",
+    "libsrt",
+    {
+      "name": "libssh",
+      "default-features": false,
+      "features": ["zlib"]
+    },
+    "libtheora",
+    "libvorbis",
+    "libvpx",
+    "libwebp",
+    "libxml2",
+    "liblzma",
+    "mp3lame",
+    "openjpeg",
+    "openssl",
+    "opus",
+    "snappy",
+    "soxr",
+    "speex",
+    "svt-av1",
+    "x264",
+    "x265",
+    "zlib"
+  ]
+}

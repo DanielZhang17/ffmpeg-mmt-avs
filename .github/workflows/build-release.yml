@@ -44,11 +44,22 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes build-essential cmake curl nasm pkg-config xz-utils zip
+          sudo apt-get install --yes \
+            autoconf autoconf-archive automake build-essential bison cmake \
+            curl flex gperf libtool meson nasm ninja-build patch perl \
+            pkg-config python3 xz-utils yasm zip
 
       - name: Install macOS build dependencies
         if: runner.os == 'macOS'
-        run: brew install cmake nasm pkg-config
+        run: >-
+          brew install autoconf autoconf-archive automake cmake libtool
+          meson nasm ninja pkg-config yasm
+
+      - name: Cache portable dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/vcpkg/archives
+          key: vcpkg-${{ runner.os }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ hashFiles('vcpkg.json', 'patches/vcpkg/**') }}
 
       - name: Build release archive
         run: ./scripts/build.sh "${{ matrix.platform }}" "${{ matrix.arch }}"

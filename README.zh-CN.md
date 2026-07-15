@@ -8,7 +8,7 @@
 ## 支持的功能
 
 - HTTP/HTTPS、RTP/RTSP、RTMP/RTMPS、TCP、UDP、TLS/DTLS、FTP、Icecast
-- 通过静态链接的 Mbed TLS 3.6.6 提供 TLS
+- 通过静态链接的 OpenSSL 3.5.7 LTS 提供 TLS 1.3
 - MPEG-TS、MP4、Matroska/WebM、MOV、FLV、HLS、DASH、AVI、MXF、WAV
 - FFmpeg 全部内置解码器、编码器、解析器、码流滤镜及音视频滤镜
 - 通过 `mmttlv` 解复用器读取 MMT/TLV
@@ -17,6 +17,12 @@
 - 通过 `libuavs3d` 解码 10-bit AVS3
 - H.264、HEVC、VVC、AV1、VP8/VP9、MPEG-2/4、AAC、AC-3/E-AC-3、MP3、
   FLAC、Opus、Vorbis 等主流内置解码器
+- 通过 x264/x265 编码 H.264/HEVC
+- 通过 libaom、dav1d 和 SVT-AV1 编解码 AV1
+- 通过 libvpx 编解码 VP8/VP9
+- 支持 MP3、Opus、Vorbis、Speex、Theora、WebP、JPEG 2000 和 JPEG XL
+- 使用 FreeType、Fontconfig、FriBidi 和 HarfBuzz 渲染 ASS/SSA 字幕
+- 支持 SRT、SFTP、libopenmpt、SoX 重采样、Snappy、XML、BZip2、LZMA 和 Zlib
 
 本项目不启用 `--enable-nonfree` 组件。硬件加速能力与上游 FFmpeg 一样，取决于平台。
 
@@ -49,8 +55,8 @@ GitHub Actions 会在 push 和 pull request 时验证全部 6 个目标。推送
 `ffmpeg-*-mmt` 的标签后，工作流会构建相同矩阵，并把压缩包附加到 GitHub Release。
 
 ```sh
-git tag ffmpeg-8.1.2-mmt
-git push origin ffmpeg-8.1.2-mmt
+git tag ffmpeg-8.1.2-full-mmt
+git push origin ffmpeg-8.1.2-full-mmt
 ```
 
 ## 源码来源
@@ -60,12 +66,13 @@ git push origin ffmpeg-8.1.2-mmt
 - AVS+ 移植：`nilaoda/mpv-iina-avs`，修订版 `2c69b7317c31`
 - davs2 10-bit：`xatabhk/davs2-10bit`，修订版 `21d64c8f8e36`
 - uavs3d：`uavs3/uavs3d`，修订版 `0e20d2c`
-- Mbed TLS：3.6.6，修订版 `0bebf8b8c7f0`
+- OpenSSL：3.5.7 LTS，修订版 `6ca677c395a4`
+- 依赖构建配方：vcpkg 修订版 `8e8dfb4ba483`
 
 所有应用到固定上游版本的补丁均保存在 `patches/`。
 
 ## 许可证
 
-生成的 FFmpeg 构建采用 GPL version 3 or later。`libdavs2` 要求 GPL 模式，
-Mbed TLS 则要求启用 FFmpeg 的 version-3 模式。详见 `LICENSE`。各上游依赖的
-许可证声明保存在 `licenses/`，并包含于每个发布包中。
+生成的 FFmpeg 构建采用 GPL version 3 or later。所包含的 GPL 编解码器库要求
+GPL 模式，项目也明确启用了 version-3 模式。每个发行包都在
+`licenses/vcpkg/` 中包含所有静态链接依赖项的许可证声明。详见 `LICENSE`。

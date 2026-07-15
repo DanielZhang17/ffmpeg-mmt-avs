@@ -1,0 +1,47 @@
+diff --git a/openssl/portfile.cmake b/openssl/portfile.cmake
+index 21a7f1a..af1fab4 100644
+--- a/openssl/portfile.cmake
++++ b/openssl/portfile.cmake
+@@ -8,7 +8,7 @@ vcpkg_from_github(
+     OUT_SOURCE_PATH SOURCE_PATH
+     REPO openssl/openssl
+     REF "openssl-${VERSION}"
+-    SHA512 a89c08101fa1d7e3c09b14f4a90d450bcf336a4f6a3e6e4ea990e4deddcd9ce250472f9114438fd134ff4b47fe93dd47232308567088b2b1c0b2eb50e3b56bdf
++    SHA512 a964f191d527a5479d2d3a2fce8c4c4b08af013ab22f8e88c09ea8bc16dd166879418683462072969737bc517a1c76a4a044706367cd2cdd98f93657138707d6
+     PATCHES
+         cmake-config.patch
+         command-line-length.patch
+diff --git a/openssl/vcpkg.json b/openssl/vcpkg.json
+index b55443d..f8dd2bf 100644
+--- a/openssl/vcpkg.json
++++ b/openssl/vcpkg.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "openssl",
+-  "version": "3.6.3",
++  "version": "3.5.7",
+   "description": "OpenSSL is an open source project that provides a robust, commercial-grade, and full-featured toolkit for the Transport Layer Security (TLS) and Secure Sockets Layer (SSL) protocols. It is also a general-purpose cryptography library.",
+   "homepage": "https://www.openssl.org",
+   "license": "Apache-2.0",
+diff --git a/openssl/unix/portfile.cmake b/openssl/unix/portfile.cmake
+index f542e88..f5b6298 100644
+--- a/openssl/unix/portfile.cmake
++++ b/openssl/unix/portfile.cmake
+@@ -101,7 +101,8 @@ elseif(VCPKG_TARGET_IS_MINGW)
+     if(VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
+         set(OPENSSL_ARCH mingw64)
+     elseif(VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
+-        set(OPENSSL_ARCH mingwarm64)
++        set(OPENSSL_ARCH mingw64)
++        list(APPEND CONFIGURE_OPTIONS no-asm)
+     else()
+         set(OPENSSL_ARCH mingw)
+     endif()
+@@ -140,7 +141,7 @@ vcpkg_configure_make(
+ )
+ vcpkg_install_make(
+     ${MAKEFILE_OPTIONS}
+-    BUILD_TARGET build_inst_sw
++    BUILD_TARGET build_sw
+ )
+ vcpkg_fixup_pkgconfig()
