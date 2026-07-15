@@ -190,8 +190,11 @@ strip=$(command -v "$strip")
 vcpkg_overlay="$BUILD_ROOT/vcpkg-overlay"
 mkdir -p "$vcpkg_overlay"
 cp -R "$SOURCE_ROOT/vcpkg/ports/openssl" "$vcpkg_overlay/"
+cp -R "$SOURCE_ROOT/vcpkg/ports/libvpx" "$vcpkg_overlay/"
 patch --directory="$vcpkg_overlay" --strip=1 \
     --input="$ROOT_DIR/patches/vcpkg/0001-pin-openssl-3.5.7.patch"
+patch --directory="$vcpkg_overlay" --strip=1 \
+    --input="$ROOT_DIR/patches/vcpkg/0002-fix-libvpx-windows-arm64-target.patch"
 "$SOURCE_ROOT/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
 "$SOURCE_ROOT/vcpkg/vcpkg" install \
     --triplet "$vcpkg_triplet" \

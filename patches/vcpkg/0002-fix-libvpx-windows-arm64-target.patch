@@ -1,0 +1,13 @@
+diff --git a/libvpx/portfile.cmake b/libvpx/portfile.cmake
+index c153c91..7111676 100644
+--- a/libvpx/portfile.cmake
++++ b/libvpx/portfile.cmake
+@@ -223,6 +223,8 @@ else()
+     if(VCPKG_TARGET_IS_MINGW)
+         if(LIBVPX_TARGET_ARCH STREQUAL "x86")
+             set(LIBVPX_TARGET "x86-win32-gcc")
++        elseif(LIBVPX_TARGET_ARCH STREQUAL "arm64")
++            set(LIBVPX_TARGET "arm64-win64-gcc")
+         else()
+             set(LIBVPX_TARGET "x86_64-win64-gcc")
+         endif()
