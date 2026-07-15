@@ -13,7 +13,6 @@
     "libass",
     "libiconv",
     "libjxl",
-    "libopenmpt",
     "libsrt",
     {
       "name": "libssh",

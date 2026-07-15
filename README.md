@@ -27,7 +27,7 @@ plus AVS/AVS+/AVS2/AVS3 support.
 - VP8/VP9 encoding and decoding through libvpx
 - MP3, Opus, Vorbis, Speex, Theora, WebP, JPEG 2000, and JPEG XL external codecs
 - ASS/SSA rendering with FreeType, Fontconfig, FriBidi, and HarfBuzz
-- SRT, SFTP, libopenmpt, SoX resampling, Snappy, XML, BZip2, LZMA, and Zlib
+- SRT, SFTP, SoX resampling, Snappy, XML, BZip2, LZMA, and Zlib
 
 No `--enable-nonfree` components are used. Hardware acceleration remains
 platform-dependent, as in upstream FFmpeg.

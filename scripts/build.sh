@@ -271,7 +271,6 @@ ffmpeg_configure=(
     --enable-libjxl
     --enable-libmp3lame
     --enable-libopenjpeg
-    --enable-libopenmpt
     --enable-libopus
     --enable-libsnappy
     --enable-libsoxr

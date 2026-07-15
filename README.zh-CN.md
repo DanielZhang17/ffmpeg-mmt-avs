@@ -22,7 +22,7 @@
 - 通过 libvpx 编解码 VP8/VP9
 - 支持 MP3、Opus、Vorbis、Speex、Theora、WebP、JPEG 2000 和 JPEG XL
 - 使用 FreeType、Fontconfig、FriBidi 和 HarfBuzz 渲染 ASS/SSA 字幕
-- 支持 SRT、SFTP、libopenmpt、SoX 重采样、Snappy、XML、BZip2、LZMA 和 Zlib
+- 支持 SRT、SFTP、SoX 重采样、Snappy、XML、BZip2、LZMA 和 Zlib
 
 本项目不启用 `--enable-nonfree` 组件。硬件加速能力与上游 FFmpeg 一样，取决于平台。
 

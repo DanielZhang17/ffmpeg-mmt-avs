@@ -24,7 +24,7 @@ MMT/MMTS と AVS/AVS+/AVS2/AVS3 に対応します。
 - libvpx による VP8/VP9 エンコード・デコード
 - MP3、Opus、Vorbis、Speex、Theora、WebP、JPEG 2000、JPEG XL
 - FreeType、Fontconfig、FriBidi、HarfBuzz による ASS/SSA 字幕描画
-- SRT、SFTP、libopenmpt、SoX リサンプリング、Snappy、XML、BZip2、LZMA、Zlib
+- SRT、SFTP、SoX リサンプリング、Snappy、XML、BZip2、LZMA、Zlib
 
 `--enable-nonfree` コンポーネントは使用していません。ハードウェアアクセラレーション
 は upstream FFmpeg と同様にプラットフォーム依存です。
